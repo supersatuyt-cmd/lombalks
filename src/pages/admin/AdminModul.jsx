@@ -71,41 +71,68 @@ export default function AdminModul() {
   };
 
   const tambahModul = async () => {
+    if (!selectedBidang) {
+      showToast('Pilih bidang lomba terlebih dahulu', 'error');
+      return;
+    }
     const maxUrutan = modulList.length > 0 ? Math.max(...modulList.map(m => m.urutan)) : 0;
-    const { data, error } = await supabase.from('modul').insert({
-      bidang_lomba_id: selectedBidang.id,
-      nama: `Modul ${maxUrutan + 1}: (Nama Baru)`,
-      urutan: maxUrutan + 1,
-    }).select().single();
-    if (!error) {
+    
+    try {
+      const { data, error } = await supabase.from('modul').insert({
+        bidang_lomba_id: selectedBidang.id,
+        nama: `Modul ${maxUrutan + 1}: (Nama Baru)`,
+        urutan: maxUrutan + 1,
+      }).select().single();
+
+      if (error) throw error;
+
       setModulList(prev => [...prev, { ...data, deskripsi_nilai: [], _dirty: false }]);
       setExpandedModul(prev => ({ ...prev, [data.id]: true }));
+      showToast('Modul berhasil ditambahkan');
+    } catch (e) {
+      console.error('Error tambahModul:', e);
+      showToast('Gagal menambah modul: ' + e.message, 'error');
     }
   };
 
   const hapusModul = async (modulId) => {
     if (!confirm('Hapus modul ini beserta semua deskripsi nilainya?')) return;
-    await supabase.from('modul').delete().eq('id', modulId);
-    setModulList(prev => prev.filter(m => m.id !== modulId));
-    showToast('Modul dihapus');
+    try {
+      const { error } = await supabase.from('modul').delete().eq('id', modulId);
+      if (error) throw error;
+      setModulList(prev => prev.filter(m => m.id !== modulId));
+      showToast('Modul dihapus');
+    } catch (e) {
+      console.error('Error hapusModul:', e);
+      showToast('Gagal menghapus modul: ' + e.message, 'error');
+    }
   };
 
   const tambahDeskripsi = async (modulId) => {
     const modul = modulList.find(m => m.id === modulId);
-    const maxUrutan = modul.deskripsi_nilai.length > 0
+    if (!modul) return;
+    
+    const maxUrutan = modul.deskripsi_nilai?.length > 0
       ? Math.max(...modul.deskripsi_nilai.map(d => d.urutan)) : 0;
-    const { data, error } = await supabase.from('deskripsi_nilai').insert({
-      modul_id: modulId,
-      nama: 'Deskripsi Baru',
-      nilai_max: 100,
-      urutan: maxUrutan + 1,
-    }).select().single();
-    if (!error) {
+      
+    try {
+      const { data, error } = await supabase.from('deskripsi_nilai').insert({
+        modul_id: modulId,
+        nama: 'Deskripsi Baru',
+        nilai_max: 100,
+        urutan: maxUrutan + 1,
+      }).select().single();
+
+      if (error) throw error;
+
       setModulList(prev => prev.map(m =>
         m.id === modulId
-          ? { ...m, deskripsi_nilai: [...m.deskripsi_nilai, data] }
+          ? { ...m, deskripsi_nilai: [...(m.deskripsi_nilai || []), data] }
           : m
       ));
+    } catch (e) {
+      console.error('Error tambahDeskripsi:', e);
+      showToast('Gagal menambah deskripsi: ' + e.message, 'error');
     }
   };
 

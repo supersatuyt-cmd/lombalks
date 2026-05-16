@@ -49,11 +49,11 @@ export function Header() {
                 <span className="hidden sm:inline">Penilaian</span>
               </Link>
               <Link
-                to="/admin/modul"
+                to="/admin"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-blue-50 hover:text-primary transition-colors"
               >
                 <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Kelola Modul</span>
+                <span className="hidden sm:inline">Admin Panel</span>
               </Link>
               <button
                 onClick={handleLogout}
