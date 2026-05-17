@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { PageWrapper } from '../../components/layout/Layout';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { supabase } from '../../lib/supabase';
-import { Plus, Save, Trash2, ChevronDown, ChevronRight, Settings } from 'lucide-react';
+import { Settings, Plus, Save, Trash2, ChevronDown, ChevronRight, ArrowLeft } from 'lucide-react';
 
 export default function AdminModul() {
   const { user } = useAuth();
@@ -150,13 +150,16 @@ export default function AdminModul() {
     setSaving(true);
     try {
       for (const modul of modulList.filter(m => m._dirty)) {
-        await supabase.from('modul').update({ nama: modul.nama, urutan: modul.urutan }).eq('id', modul.id);
+        const { error: errModul } = await supabase.from('modul').update({ nama: modul.nama, urutan: modul.urutan }).eq('id', modul.id);
+        if (errModul) throw errModul;
+        
         for (const desk of modul.deskripsi_nilai) {
-          await supabase.from('deskripsi_nilai').update({
+          const { error: errDesk } = await supabase.from('deskripsi_nilai').update({
             nama: desk.nama,
             nilai_max: Number(desk.nilai_max),
             urutan: desk.urutan,
           }).eq('id', desk.id);
+          if (errDesk) throw errDesk;
         }
       }
       showToast('Semua perubahan tersimpan!');
@@ -183,13 +186,18 @@ export default function AdminModul() {
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-dark flex items-center gap-2">
-              <Settings className="h-7 w-7 text-primary" />
-              Kelola Modul & Deskripsi Nilai
-            </h1>
-            <p className="text-gray-500 text-sm mt-1">Edit nama modul, deskripsi, dan nilai maksimal per bidang lomba</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link to="/admin" className="p-2 rounded-lg hover:bg-green-50 text-green-600 transition-colors">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-dark flex items-center gap-2">
+                <Settings className="h-6 w-6 text-primary" />
+                Kelola Modul & Kriteria
+              </h1>
+              <p className="text-gray-500 text-sm mt-1">Sesuaikan modul penilaian, bobot, dan kriteria untuk setiap bidang lomba</p>
+            </div>
           </div>
           <div className="flex gap-2">
             {hasDirty && (

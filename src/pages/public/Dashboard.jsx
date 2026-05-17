@@ -39,14 +39,29 @@ export default function Dashboard() {
       const pesertaIds = (peserta || []).filter(p => p.bidang_lomba_id === b.id).map(p => p.id);
       const totalCombinations = juriIds.length * pesertaIds.length;
 
-      // Hitung juri yang sudah menilai semua peserta
+      // Hitung progress secara granular (jumlah peserta yang sudah dinilai oleh juri)
+      const expectedEvaluations = juriIds.length * pesertaIds.length;
+      let completedEvaluations = 0;
+
+      if (expectedEvaluations > 0) {
+        const uniqueEvaluations = new Set();
+        (penilaian || []).forEach(p => {
+          if (juriIds.includes(p.juri_id) && pesertaIds.includes(p.peserta_id)) {
+            uniqueEvaluations.add(`${p.juri_id}-${p.peserta_id}`);
+          }
+        });
+        completedEvaluations = uniqueEvaluations.size;
+      }
+
+      // Progress bar percentage
+      const progress = expectedEvaluations > 0 ? (completedEvaluations / expectedEvaluations) * 100 : 0;
+
+      // Juri selesai (yang sudah menilai SEMUA peserta)
       const juriSelesai = juriIds.filter(juriId => {
         return pesertaIds.every(pesertaId =>
           (penilaian || []).some(p => p.juri_id === juriId && p.peserta_id === pesertaId)
         );
       }).length;
-
-      const progress = juriIds.length > 0 ? (juriSelesai / juriIds.length) * 100 : 0;
 
       return {
         ...b,
@@ -62,7 +77,8 @@ export default function Dashboard() {
   };
 
   const chartData = bidangList.map(b => ({
-    name: b.nama.length > 15 ? b.nama.substring(0, 15) + '...' : b.nama,
+    name: b.kode.toUpperCase(), // Menggunakan kode agar muat
+    fullName: b.nama,
     progress: Math.round(b.progress),
   }));
 

@@ -3,23 +3,27 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { PageWrapper } from '../../components/layout/Layout';
 import { Card, CardContent } from '../../components/ui/Card';
-import { Settings, Users, BookOpen, ChevronRight } from 'lucide-react';
+import { Settings, Users, BookOpen, Building2, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ peserta: 0, modul: 0, bidang: 0 });
+  const [stats, setStats] = useState({ peserta: 0, modul: 0, bidang: 0, sekolah: 0 });
 
   useEffect(() => {
     const fetchStats = async () => {
-      const { count: peserta } = await supabase.from('peserta').select('*', { count: 'exact', head: true });
-      const { count: modul } = await supabase.from('modul').select('*', { count: 'exact', head: true });
-      const { count: bidang } = await supabase.from('bidang_lomba').select('*', { count: 'exact', head: true });
+      const [p, m, b, s] = await Promise.all([
+        supabase.from('peserta').select('*', { count: 'exact', head: true }),
+        supabase.from('modul').select('*', { count: 'exact', head: true }),
+        supabase.from('bidang_lomba').select('*', { count: 'exact', head: true }),
+        supabase.from('sekolah').select('*', { count: 'exact', head: true })
+      ]);
       
       setStats({
-        peserta: peserta || 0,
-        modul: modul || 0,
-        bidang: bidang || 0
+        peserta: p.count || 0,
+        modul: m.count || 0,
+        bidang: b.count || 0,
+        sekolah: s.count || 0
       });
     };
     fetchStats();
@@ -48,12 +52,21 @@ export default function AdminDashboard() {
     },
     {
       title: 'Bidang Lomba',
-      description: 'Lihat daftar bidang lomba yang diselenggarakan',
+      description: 'Manajemen daftar bidang keahlian yang dilombakan',
       icon: BookOpen,
-      link: '/',
+      link: '/admin/bidang',
       color: 'text-purple-500',
       bgColor: 'bg-purple-50',
       stat: `${stats.bidang} Bidang`
+    },
+    {
+      title: 'Daftar Sekolah',
+      description: 'Kelola data sekolah yang berpartisipasi dalam LKS',
+      icon: Building2,
+      link: '/admin/sekolah',
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-50',
+      stat: `${stats.sekolah} Sekolah`
     }
   ];
 

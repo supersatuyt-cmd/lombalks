@@ -40,11 +40,11 @@ export default function Login() {
           <p className="text-gray-500 text-sm">Masuk untuk mulai menilai peserta</p>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-0 shadow-xl shadow-blue-900/5 bg-white/80 backdrop-blur-xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center justify-center gap-2 text-xl">
               <Lock className="w-5 h-5 text-primary" />
-              Login Akun
+              Login Akun Juri
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -55,14 +55,14 @@ export default function Login() {
                 </div>
               )}
               <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Email</label>
+                <label className="text-sm font-medium text-gray-700">Username / Email</label>
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
-                  placeholder="juri@lkskutim.id"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  placeholder="Contoh: rahmad (atau email)"
                 />
               </div>
               <div className="space-y-2">
@@ -72,11 +72,11 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all"
+                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
                   placeholder="••••••••"
                 />
               </div>
-              <Button type="submit" className="w-full mt-4" disabled={loading}>
+              <Button type="submit" className="w-full mt-6 py-2.5 text-base shadow-lg shadow-primary/30" disabled={loading}>
                 {loading ? 'Memproses...' : 'Masuk'}
               </Button>
             </form>

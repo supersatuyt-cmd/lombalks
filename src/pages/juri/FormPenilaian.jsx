@@ -21,7 +21,14 @@ export default function FormPenilaian() {
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    if (juriData?.bidang_lomba_id) fetchData();
+    if (juriData) {
+      if (juriData.bidang_lomba_id) {
+        fetchData();
+      } else {
+        setLoading(false);
+        showToast('Data Juri tidak memiliki Bidang Lomba', 'error');
+      }
+    }
   }, [juriData]);
 
   useEffect(() => {
@@ -35,16 +42,22 @@ export default function FormPenilaian() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [pesertaRes, modulRes] = await Promise.all([
-      supabase.from('peserta').select('*, sekolah(nama)').eq('bidang_lomba_id', juriData.bidang_lomba_id).order('nomor_peserta'),
-      supabase.from('modul').select('*, deskripsi_nilai(*)').eq('bidang_lomba_id', juriData.bidang_lomba_id).order('urutan'),
-    ]);
-    setPesertaList(pesertaRes.data || []);
-    setModulList((modulRes.data || []).map(m => ({
-      ...m,
-      deskripsi_nilai: (m.deskripsi_nilai || []).sort((a, b) => a.urutan - b.urutan),
-    })));
-    setLoading(false);
+    try {
+      const [pesertaRes, modulRes] = await Promise.all([
+        supabase.from('peserta').select('*, sekolah(nama)').eq('bidang_lomba_id', juriData.bidang_lomba_id).order('nomor_peserta'),
+        supabase.from('modul').select('*, deskripsi_nilai(*)').eq('bidang_lomba_id', juriData.bidang_lomba_id).order('urutan'),
+      ]);
+      setPesertaList(pesertaRes.data || []);
+      setModulList((modulRes.data || []).map(m => ({
+        ...m,
+        deskripsi_nilai: (m.deskripsi_nilai || []).sort((a, b) => a.urutan - b.urutan),
+      })));
+    } catch (err) {
+      console.error(err);
+      showToast('Gagal memuat data', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const loadNilaiExisting = async () => {
@@ -108,9 +121,29 @@ export default function FormPenilaian() {
 
   if (!user) return <Navigate to="/login" replace />;
 
+  if (loading && !juriData) return (
+    <PageWrapper>
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p>Memeriksa sesi login juri...</p>
+      </div>
+    </PageWrapper>
+  );
+
   if (loading) return (
     <PageWrapper>
-      <div className="flex items-center justify-center h-64 text-gray-400">Memuat data penilaian...</div>
+      <div className="flex flex-col items-center justify-center h-64 text-gray-400">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
+        <p>Memuat data peserta dan modul penilaian...</p>
+      </div>
+    </PageWrapper>
+  );
+
+  if (!juriData) return (
+    <PageWrapper>
+      <div className="flex flex-col items-center justify-center h-64 text-red-500">
+        <p>Anda tidak memiliki akses Juri yang valid.</p>
+      </div>
     </PageWrapper>
   );
 
@@ -194,55 +227,64 @@ export default function FormPenilaian() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-50">
-                    <TableHead className="w-1/2">Deskripsi Penilaian</TableHead>
-                    <TableHead className="text-center">Nilai Max</TableHead>
-                    <TableHead className="text-center w-40">Nilai Diberikan</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {modulList.map((modul) => (
-                    <React.Fragment key={modul.id}>
-                      <TableRow className="bg-blue-50/50">
-                        <TableCell colSpan={3} className="font-semibold text-primary py-2 text-sm">
-                          📋 {modul.nama}
-                        </TableCell>
-                      </TableRow>
-                      {modul.deskripsi_nilai.map((desc) => (
-                        <TableRow key={desc.id}>
-                          <TableCell className="pl-8 text-gray-700 text-sm">{desc.nama}</TableCell>
-                          <TableCell className="text-center text-gray-500 font-medium">{desc.nilai_max}</TableCell>
-                          <TableCell>
-                            <input type="number" min="0" max={desc.nilai_max} step="0.5"
-                              value={formNilai[desc.id] !== undefined ? formNilai[desc.id] : ''}
-                              onChange={e => handleNilaiChange(desc.id, desc.nilai_max, e.target.value)}
-                              placeholder="0"
-                              className="w-full text-center p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-lg font-semibold text-dark"
-                            />
-                          </TableCell>
+            <CardContent className="p-4 sm:p-6 space-y-6">
+              {modulList.map((modul) => (
+                <div key={modul.id} className="border border-blue-100 rounded-xl overflow-hidden shadow-sm bg-white transition-all hover:shadow-md">
+                  <div className="bg-gradient-to-r from-blue-50/80 to-indigo-50/50 px-5 py-3 border-b border-blue-100 flex justify-between items-center">
+                    <h3 className="font-bold text-dark text-lg flex items-center gap-2">
+                      <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg flex items-center justify-center text-sm">📋</span>
+                      {modul.nama}
+                    </h3>
+                    <div className="bg-white px-3 py-1 rounded-md shadow-sm border border-blue-50">
+                      <span className="text-sm text-gray-500 mr-2">Subtotal:</span>
+                      <span className="font-bold text-primary text-lg">{hitungTotalModul(modul).toFixed(1)}</span>
+                    </div>
+                  </div>
+                  <div className="p-0 overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50/30">
+                          <TableHead className="w-1/2 font-semibold text-gray-600">Deskripsi Penilaian</TableHead>
+                          <TableHead className="text-center font-semibold text-gray-600 w-32">Nilai Max</TableHead>
+                          <TableHead className="text-center font-semibold text-gray-600 w-48">Skor Diberikan</TableHead>
                         </TableRow>
-                      ))}
-                      <TableRow className="bg-gray-50/80">
-                        <TableCell colSpan={2} className="text-right text-sm font-medium text-gray-600">
-                          Subtotal {modul.nama.split(':')[0]}:
-                        </TableCell>
-                        <TableCell className="text-center font-bold text-dark">{hitungTotalModul(modul).toFixed(1)}</TableCell>
-                      </TableRow>
-                    </React.Fragment>
-                  ))}
-                </TableBody>
-              </Table>
-              <div className="p-5 border-t flex items-center justify-between bg-gray-50">
-                <div className="text-sm text-gray-500">
-                  Persentase: <span className="font-bold text-primary">
-                    {maxTotal > 0 ? ((grandTotal / maxTotal) * 100).toFixed(1) : 0}%
-                  </span>
+                      </TableHeader>
+                      <TableBody>
+                        {modul.deskripsi_nilai.map((desc) => (
+                          <TableRow key={desc.id} className="hover:bg-blue-50/20 transition-colors">
+                            <TableCell className="font-medium text-gray-700 pl-5">{desc.nama}</TableCell>
+                            <TableCell className="text-center">
+                              <span className="inline-flex items-center justify-center bg-gray-100 text-gray-600 text-xs font-bold px-2.5 py-1 rounded-full">
+                                {desc.nilai_max}
+                              </span>
+                            </TableCell>
+                            <TableCell className="pr-5">
+                              <input 
+                                type="number" min="0" max={desc.nilai_max} step="0.5"
+                                value={formNilai[desc.id] !== undefined ? formNilai[desc.id] : ''}
+                                onChange={e => handleNilaiChange(desc.id, desc.nilai_max, e.target.value)}
+                                placeholder="0"
+                                className="w-full text-center p-2.5 border-2 border-gray-200 rounded-lg focus:ring-4 focus:ring-primary/20 focus:border-primary outline-none text-lg font-bold text-dark transition-all"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 </div>
-                <Button onClick={handleSimpan} disabled={saving} size="lg">
-                  {saving ? 'Menyimpan...' : <><Save className="h-5 w-5 mr-2" />Simpan Nilai</>}
+              ))}
+
+              <div className="p-6 border rounded-xl flex flex-col sm:flex-row items-center justify-between bg-gradient-to-br from-gray-50 to-blue-50/30 shadow-inner">
+                <div className="text-center sm:text-left mb-4 sm:mb-0">
+                  <div className="text-sm text-gray-500 mb-1">Persentase Pencapaian</div>
+                  <div className="text-2xl font-black text-primary flex items-end gap-1">
+                    {maxTotal > 0 ? ((grandTotal / maxTotal) * 100).toFixed(1) : 0}
+                    <span className="text-lg text-gray-400">%</span>
+                  </div>
+                </div>
+                <Button onClick={handleSimpan} disabled={saving} size="lg" className="w-full sm:w-auto shadow-lg shadow-primary/30">
+                  {saving ? 'Menyimpan...' : <><Save className="h-5 w-5 mr-2" />Simpan Semua Nilai</>}
                 </Button>
               </div>
             </CardContent>
