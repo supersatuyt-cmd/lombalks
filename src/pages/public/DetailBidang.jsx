@@ -135,7 +135,7 @@ export default function DetailBidang() {
     <PageWrapper>
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Link to="/" className="p-2 rounded-lg hover:bg-blue-50 text-primary transition-colors">
+          <Link to="/klasemen" className="p-2 rounded-lg hover:bg-blue-50 text-primary transition-colors">
             <ArrowLeft className="h-5 w-5" />
           </Link>
           <div>

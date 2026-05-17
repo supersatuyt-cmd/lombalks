@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Medal, Lock } from 'lucide-react';
+import { Lock, User, ArrowLeft } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -17,7 +15,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
+
     try {
       const { error } = await signIn(email, password);
       if (error) throw error;
@@ -30,58 +28,104 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
-        <div className="flex flex-col items-center justify-center mb-8 gap-2">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm">
-            <Medal className="h-10 w-10 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-dark mt-2">Portal Juri LKS Dikmen</h1>
-          <p className="text-gray-500 text-sm">Masuk untuk mulai menilai peserta</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-[#051122]">
+      {/* Dynamic Background Elements */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#0a1e36] via-[#0d2a4a] to-[#041222]"></div>
+      <div className="absolute inset-0 dot-pattern opacity-[0.05]"></div>
 
-        <Card className="border-0 shadow-xl shadow-blue-900/5 bg-white/80 backdrop-blur-xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="flex items-center justify-center gap-2 text-xl">
-              <Lock className="w-5 h-5 text-primary" />
-              Login Akun Juri
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              {error && (
-                <div className="p-3 text-sm text-red-800 bg-red-100 rounded-md">
-                  {error}
+      {/* Decorative Orbs */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] bg-blue-500/20 rounded-full blur-[120px] animate-pulse-glow"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[35vw] h-[35vw] bg-accent/20 rounded-full blur-[100px] animate-pulse-glow delay-1000"></div>
+      <div className="absolute top-[30%] right-[20%] w-[20vw] h-[20vw] bg-purple-500/15 rounded-full blur-[90px] animate-pulse-glow delay-500"></div>
+
+      {/* Back to Home Button */}
+      <Link to="/" className="absolute top-6 left-6 lg:top-10 lg:left-10 flex items-center gap-2 text-gray-400 hover:text-white transition-colors group z-20">
+        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+        <span className="font-medium text-sm hidden sm:block">Kembali ke Beranda</span>
+      </Link>
+
+      <div className="w-full max-w-md px-4 relative z-10 animate-in fade-in slide-in-from-bottom-8 duration-700">
+
+        {/* Glass Card */}
+        <div className="bg-white/10 backdrop-blur-2xl border border-white/20 shadow-2xl rounded-[2rem] p-8 sm:p-10 relative overflow-hidden">
+
+          {/* Subtle card gradient */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none"></div>
+
+          <div className="flex flex-col items-center justify-center mb-10 relative z-10">
+            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] p-3 mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
+              <img src="/lksicon.png" alt="LKS" className="w-full h-full object-contain drop-shadow-sm" />
+            </div>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight text-center">Portal Juri</h1>
+            <p className="text-blue-200 text-sm mt-2 font-medium text-center">LKS Dikmen Kabupaten Kutai Timur</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6 relative z-10">
+            {error && (
+              <div className="p-4 text-sm text-red-200 bg-red-950/50 border border-red-500/50 rounded-xl backdrop-blur-md animate-in slide-in-from-top-2">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Username / Email</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
                 </div>
-              )}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Username / Email</label>
                 <input
                   type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
-                  placeholder="Contoh: rahmad (atau email)"
+                  className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                  placeholder="Masukkan username/email"
                 />
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">Password</label>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Password</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
+                </div>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
                   placeholder="••••••••"
                 />
               </div>
-              <Button type="submit" className="w-full mt-6 py-2.5 text-base shadow-lg shadow-primary/30" disabled={loading}>
-                {loading ? 'Memproses...' : 'Masuk'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full mt-8 py-4 bg-gradient-to-r from-accent to-blue-600 hover:from-blue-500 hover:to-accent text-white font-bold rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
+              disabled={loading}
+            >
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Memproses...
+                </span>
+              ) : 'Masuk ke Portal'}
+            </button>
+          </form>
+        </div>
+
+        {/* Sponsor/Organizer Logos */}
+        <div className="mt-10 flex flex-col items-center">
+          <p className="text-[10px] text-blue-300/50 uppercase tracking-[0.2em] font-semibold mb-5">Diselenggarakan Oleh</p>
+          <div className="flex items-center justify-center gap-12 bg-white/20 px-12 py-8 rounded-[2.5rem] backdrop-blur-md border border-white/30 shadow-[0_8px_30px_rgb(0,0,0,0.2)]">
+            <img src="/lkss.png" alt="Logo LKS" className="h-28 w-auto object-contain opacity-100 hover:scale-105 transition-transform duration-300" />
+            <div className="w-px h-20 bg-white/40"></div>
+            <img src="/mkn.png" alt="Logo MKN" className="h-28 w-auto object-contain opacity-100 hover:scale-105 transition-transform duration-300" />
+          </div>
+        </div>
+
       </div>
     </div>
   );

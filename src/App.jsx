@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import LandingPage from './pages/public/LandingPage';
 import Dashboard from './pages/public/Dashboard';
 import DetailBidang from './pages/public/DetailBidang';
 import DetailPeserta from './pages/public/DetailPeserta';
@@ -24,7 +25,8 @@ function ProtectedRoute({ children }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Dashboard />} />
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/klasemen" element={<Dashboard />} />
       <Route path="/bidang/:kode" element={<DetailBidang />} />
       <Route path="/peserta/:slug" element={<DetailPeserta />} />
       <Route path="/login" element={<Login />} />
