@@ -12,6 +12,7 @@ import AdminModul from './pages/admin/AdminModul';
 import AdminPeserta from './pages/admin/AdminPeserta';
 import AdminBidang from './pages/admin/AdminBidang';
 import AdminSekolah from './pages/admin/AdminSekolah';
+import AdminJuri from './pages/admin/AdminJuri';
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -38,6 +39,7 @@ function AppRoutes() {
       <Route path="/admin/peserta" element={<ProtectedRoute><AdminPeserta /></ProtectedRoute>} />
       <Route path="/admin/bidang" element={<ProtectedRoute><AdminBidang /></ProtectedRoute>} />
       <Route path="/admin/sekolah" element={<ProtectedRoute><AdminSekolah /></ProtectedRoute>} />
+      <Route path="/admin/juri" element={<ProtectedRoute><AdminJuri /></ProtectedRoute>} />
     </Routes>
   );
 }

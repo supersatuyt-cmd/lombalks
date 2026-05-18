@@ -1,15 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Lock, User, ArrowLeft } from 'lucide-react';
+import { Lock, User, ArrowLeft, KeyRound } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Recovery states
+  const [isRecovery, setIsRecovery] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const { signIn } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Deteksi jika ini adalah link recovery dari email Supabase
+    if (window.location.hash.includes('type=recovery')) {
+      setIsRecovery(true);
+    }
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecovery(true);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,6 +47,41 @@ export default function Login() {
       navigate('/juri/penilaian');
     } catch (err) {
       setError(err.message || 'Gagal login. Cek kembali email dan password Anda.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError(null);
+    
+    if (newPassword !== confirmPassword) {
+      setError("Konfirmasi password tidak cocok!");
+      return;
+    }
+    
+    if (newPassword.length < 6) {
+      setError("Password minimal 6 karakter!");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (error) throw error;
+      
+      setRecoverySuccess(true);
+      // Redirect to dashboard after 3 seconds
+      setTimeout(() => {
+        navigate('/juri/penilaian');
+      }, 3000);
+      
+    } catch (err) {
+      setError(err.message || "Gagal mereset password. Token mungkin kadaluarsa.");
     } finally {
       setLoading(false);
     }
@@ -56,64 +116,121 @@ export default function Login() {
             <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-[0_8px_30px_rgb(0,0,0,0.3)] p-3 mb-6 transform -rotate-3 hover:rotate-0 transition-transform duration-300">
               <img src="/lksicon.png" alt="LKS" className="w-full h-full object-contain drop-shadow-sm" />
             </div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight text-center">Portal Juri</h1>
-            <p className="text-blue-200 text-sm mt-2 font-medium text-center">LKS Dikmen Kabupaten Kutai Timur</p>
+            <h1 className="text-3xl font-extrabold text-white tracking-tight text-center">
+              {isRecovery ? 'Reset Password' : 'Portal Juri'}
+            </h1>
+            <p className="text-blue-200 text-sm mt-2 font-medium text-center">
+              {isRecovery ? 'Masukkan password baru Anda di bawah ini' : 'LKS Dikmen Kabupaten Kutai Timur'}
+            </p>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-6 relative z-10">
-            {error && (
-              <div className="p-4 text-sm text-red-200 bg-red-950/50 border border-red-500/50 rounded-xl backdrop-blur-md animate-in slide-in-from-top-2">
-                {error}
+          {recoverySuccess ? (
+            <div className="text-center relative z-10 animate-in fade-in slide-in-from-top-4">
+              <div className="w-16 h-16 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/50">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
               </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Username / Email</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
-                  placeholder="Masukkan username/email"
-                />
-              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Password Berhasil Diubah!</h3>
+              <p className="text-blue-200/80 mb-6 text-sm">Anda akan dialihkan ke dashboard dalam beberapa detik...</p>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
+          ) : (
+            <form onSubmit={isRecovery ? handleResetPassword : handleLogin} className="space-y-6 relative z-10">
+              {error && (
+                <div className="p-4 text-sm text-red-200 bg-red-950/50 border border-red-500/50 rounded-xl backdrop-blur-md animate-in slide-in-from-top-2">
+                  {error}
                 </div>
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
+              )}
 
-            <button
-              type="submit"
-              className="w-full mt-8 py-4 bg-gradient-to-r from-accent to-blue-600 hover:from-blue-500 hover:to-accent text-white font-bold rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
-              disabled={loading}
-            >
-              {loading ? (
-                <span className="flex items-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                  Memproses...
-                </span>
-              ) : 'Masuk ke Portal'}
-            </button>
-          </form>
+              {isRecovery ? (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Password Baru</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <KeyRound className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                        placeholder="••••••••"
+                        minLength={6}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Konfirmasi Password Baru</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Username / Email</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <User className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
+                      </div>
+                      <input
+                        type="text"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                        placeholder="Masukkan username/email"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold text-blue-300/80 uppercase tracking-widest ml-1">Password</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-accent transition-colors" />
+                      </div>
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:bg-black/40 focus:ring-2 focus:ring-accent/50 focus:border-accent outline-none transition-all"
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <button
+                type="submit"
+                className="w-full mt-8 py-4 bg-gradient-to-r from-accent to-blue-600 hover:from-blue-500 hover:to-accent text-white font-bold rounded-xl shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.6)] transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Memproses...
+                  </span>
+                ) : (isRecovery ? 'Simpan Password Baru' : 'Masuk ke Portal')}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Sponsor/Organizer Logos */}
