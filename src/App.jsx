@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import LandingPage from './pages/public/LandingPage';
 import Dashboard from './pages/public/Dashboard';
@@ -24,6 +24,19 @@ function ProtectedRoute({ children }) {
 }
 
 function AppRoutes() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // Tangkap hash dari URL (misal: #access_token=...&type=recovery atau #error=...)
+    const hash = window.location.hash;
+    
+    // Jika kita di beranda dan ada hash terkait autentikasi, lempar ke halaman login
+    if (location.pathname === '/' && (hash.includes('type=recovery') || hash.includes('error='))) {
+      navigate('/login' + hash);
+    }
+  }, [navigate, location]);
+
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />

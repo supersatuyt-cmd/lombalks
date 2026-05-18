@@ -20,8 +20,30 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Deteksi jika ini adalah link recovery dari email Supabase
-    if (window.location.hash.includes('type=recovery')) {
+    // Ambil hash dari URL ATAU dari sessionStorage (karena URL keburu dihapus Supabase)
+    const hash = window.location.hash || sessionStorage.getItem('auth_hash') || '';
+
+    // 1. Cek apakah ada pesan error dari Supabase (misal token kadaluarsa)
+    if (hash.includes('error=')) {
+      // Hapus dari sessionStorage agar tidak terus-terusan muncul di masa depan
+      sessionStorage.removeItem('auth_hash');
+      
+      const params = new URLSearchParams(hash.substring(1));
+      const errorDesc = params.get('error_description');
+      const errorCode = params.get('error_code');
+      
+      if (errorCode === 'otp_expired' || (errorDesc && errorDesc.includes('expired'))) {
+        setError("Link reset password sudah KADALUARSA atau sudah terpakai. Silakan minta Admin untuk mengirim ulang link dari dashboard.");
+      } else {
+        setError(errorDesc ? errorDesc.replace(/\+/g, ' ') : "Terjadi kesalahan pada link autentikasi.");
+      }
+      
+      // Bersihkan URL agar tidak error terus jika direfresh
+      window.history.replaceState(null, '', window.location.pathname);
+    } 
+    // 2. Deteksi jika ini adalah link recovery yang masih valid
+    else if (hash.includes('type=recovery')) {
+      sessionStorage.removeItem('auth_hash');
       setIsRecovery(true);
     }
     

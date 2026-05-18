@@ -6,7 +6,21 @@ import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/Ca
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/Table';
 import { Button } from '../../components/ui/Button';
 import { supabase } from '../../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { Gavel, Search, Plus, Edit2, Trash2, X, ArrowLeft, Mail, Lock, Eye, EyeOff, AlertTriangle, CheckCircle2, ShieldCheck } from 'lucide-react';
+
+// Client sekunder khusus untuk pembuatan user tanpa mengganggu sesi login admin saat ini
+const supabaseAdminAuth = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false
+    }
+  }
+);
 
 export default function AdminJuri() {
   const { user } = useAuth();
@@ -87,8 +101,8 @@ export default function AdminJuri() {
           return;
         }
 
-        // 1. Sign up auth user
-        const { data: authData, error: authError } = await supabase.auth.signUp({
+        // 1. Sign up auth user (Gunakan client sekunder agar tidak melogout admin)
+        const { data: authData, error: authError } = await supabaseAdminAuth.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
