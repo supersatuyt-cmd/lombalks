@@ -7,11 +7,11 @@ export const useAuth = () => useContext(AuthContext);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [juriData, setJuriData] = useState(null);
+  // juriData sekarang array — satu user bisa jadi juri di beberapa bidang
+  const [juriList, setJuriList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -21,14 +21,13 @@ export function AuthProvider({ children }) {
       }
     });
 
-    // Listen for changes on auth state
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setUser(session?.user ?? null);
         if (session?.user) {
           fetchJuriData(session.user.id);
         } else {
-          setJuriData(null);
+          setJuriList([]);
           setLoading(false);
         }
       }
@@ -41,15 +40,18 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase
         .from('juri')
-        .select(`*, bidang_lomba (nama, kode)`)
+        .select(`*, bidang_lomba (id, nama, kode)`)
         .eq('user_id', userId)
-        .single();
-        
-      if (!error && data) {
-        setJuriData(data);
+        .order('nama');
+
+      if (!error && data && data.length > 0) {
+        setJuriList(data);
+      } else {
+        setJuriList([]);
       }
     } catch (err) {
-      console.error("Error fetching juri data:", err);
+      console.error('Error fetching juri data:', err);
+      setJuriList([]);
     } finally {
       setLoading(false);
     }
@@ -63,9 +65,16 @@ export function AuthProvider({ children }) {
     return supabase.auth.signOut();
   };
 
+  // juriData: row pertama (untuk backward compat), atau null kalau bukan juri
+  const juriData = juriList.length > 0 ? juriList[0] : null;
+  // isJuri: user terdaftar sebagai juri di minimal 1 bidang
+  const isJuri = juriList.length > 0;
+  // isAdmin: sudah login tapi tidak terdaftar sebagai juri sama sekali
+  const isAdmin = !!user && !loading && juriList.length === 0;
+
   return (
-    <AuthContext.Provider value={{ user, juriData, signIn, signOut, loading }}>
-      {!loading && children}
+    <AuthContext.Provider value={{ user, juriData, juriList, isJuri, isAdmin, signIn, signOut, loading }}>
+      {children}
     </AuthContext.Provider>
   );
 }

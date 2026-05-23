@@ -7,29 +7,36 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '.
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { supabase } from '../../lib/supabase';
-import { Save, ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
+import { Save, ChevronLeft, ChevronRight, CheckCircle, BookOpen } from 'lucide-react';
 
 export default function FormPenilaian() {
-  const { user, juriData } = useAuth();
+  const { user, juriList, loading: authLoading } = useAuth();
+
+  // Juri aktif yang sedang dipilih (index dari juriList)
+  const [activeBidangIdx, setActiveBidangIdx] = useState(0);
+
   const [pesertaList, setPesertaList] = useState([]);
   const [modulList, setModulList] = useState([]);
   const [pesertaIndex, setPesertaIndex] = useState(0);
   const [formNilai, setFormNilai] = useState({});
   const [savedPeserta, setSavedPeserta] = useState(new Set());
   const [saving, setSaving] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
 
+  // Juri yang aktif saat ini
+  const activeJuri = juriList[activeBidangIdx] || null;
+
+  // Reset data peserta & nilai saat ganti bidang
   useEffect(() => {
-    if (juriData) {
-      if (juriData.bidang_lomba_id) {
-        fetchData();
-      } else {
-        setLoading(false);
-        showToast('Data Juri tidak memiliki Bidang Lomba', 'error');
-      }
+    if (authLoading) return;
+    if (activeJuri?.bidang_lomba_id) {
+      setPesertaIndex(0);
+      setSavedPeserta(new Set());
+      setFormNilai({});
+      fetchData(activeJuri);
     }
-  }, [juriData]);
+  }, [activeJuri?.id, authLoading]);
 
   useEffect(() => {
     if (pesertaList.length > 0 && modulList.length > 0) loadNilaiExisting();
@@ -40,12 +47,12 @@ export default function FormPenilaian() {
     setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchData = async () => {
+  const fetchData = async (juri) => {
     setLoading(true);
     try {
       const [pesertaRes, modulRes] = await Promise.all([
-        supabase.from('peserta').select('*, sekolah(nama)').eq('bidang_lomba_id', juriData.bidang_lomba_id).order('nomor_peserta'),
-        supabase.from('modul').select('*, deskripsi_nilai(*)').eq('bidang_lomba_id', juriData.bidang_lomba_id).order('urutan'),
+        supabase.from('peserta').select('*, sekolah(nama)').eq('bidang_lomba_id', juri.bidang_lomba_id).order('nomor_peserta'),
+        supabase.from('modul').select('*, deskripsi_nilai(*)').eq('bidang_lomba_id', juri.bidang_lomba_id).order('urutan'),
       ]);
       setPesertaList(pesertaRes.data || []);
       setModulList((modulRes.data || []).map(m => ({
@@ -61,11 +68,11 @@ export default function FormPenilaian() {
   };
 
   const loadNilaiExisting = async () => {
-    if (!pesertaList[pesertaIndex] || !juriData) return;
+    if (!pesertaList[pesertaIndex] || !activeJuri) return;
     const { data } = await supabase
       .from('penilaian')
       .select('*')
-      .eq('juri_id', juriData.id)
+      .eq('juri_id', activeJuri.id)
       .eq('peserta_id', pesertaList[pesertaIndex].id);
 
     if (data?.length > 0) {
@@ -87,12 +94,12 @@ export default function FormPenilaian() {
   };
 
   const handleSimpan = async () => {
-    if (!pesertaList[pesertaIndex] || !juriData) return;
+    if (!pesertaList[pesertaIndex] || !activeJuri) return;
     setSaving(true);
     const pesertaId = pesertaList[pesertaIndex].id;
     const allDeskIds = modulList.flatMap(m => m.deskripsi_nilai.map(d => d.id));
     const payload = allDeskIds.map(deskId => ({
-      juri_id: juriData.id,
+      juri_id: activeJuri.id,
       peserta_id: pesertaId,
       deskripsi_nilai_id: deskId,
       nilai: parseFloat(formNilai[deskId]) || 0,
@@ -121,7 +128,7 @@ export default function FormPenilaian() {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  if (loading && !juriData) return (
+  if (authLoading) return (
     <PageWrapper>
       <div className="flex flex-col items-center justify-center h-64 text-gray-400">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
@@ -139,7 +146,7 @@ export default function FormPenilaian() {
     </PageWrapper>
   );
 
-  if (!juriData) return (
+  if (!activeJuri) return (
     <PageWrapper>
       <div className="flex flex-col items-center justify-center h-64 text-red-500">
         <p>Anda tidak memiliki akses Juri yang valid.</p>
@@ -167,9 +174,9 @@ export default function FormPenilaian() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm">Selamat datang,</p>
-              <h1 className="text-xl font-bold">{juriData?.nama || 'Juri'}</h1>
+              <h1 className="text-xl font-bold">{activeJuri?.nama || 'Juri'}</h1>
               <Badge className="bg-white/20 text-white mt-1 border-0">
-                {juriData?.bidang_lomba?.nama || 'Bidang Lomba'}
+                {activeJuri?.bidang_lomba?.nama || 'Bidang Lomba'}
               </Badge>
             </div>
             <div className="text-right">
@@ -179,6 +186,35 @@ export default function FormPenilaian() {
             </div>
           </div>
         </div>
+
+        {/* Tab Bidang Lomba — hanya tampil kalau juri punya lebih dari 1 bidang */}
+        {juriList.length > 1 && (
+          <div>
+            <p className="text-xs text-gray-500 mb-2 font-medium flex items-center gap-1">
+              <BookOpen className="h-3.5 w-3.5" /> Pilih Bidang Lomba
+            </p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {juriList.map((j, idx) => (
+                <button
+                  key={j.id}
+                  onClick={() => setActiveBidangIdx(idx)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold whitespace-nowrap transition-all border ${
+                    idx === activeBidangIdx
+                      ? 'bg-primary text-white border-primary shadow-md shadow-primary/20'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  <span className={`text-xs font-mono px-1.5 py-0.5 rounded ${
+                    idx === activeBidangIdx ? 'bg-white/20' : 'bg-gray-100'
+                  }`}>
+                    {j.bidang_lomba?.kode}
+                  </span>
+                  {j.bidang_lomba?.nama}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Tab Peserta */}
         <div className="flex gap-2 overflow-x-auto pb-1">
@@ -259,7 +295,7 @@ export default function FormPenilaian() {
                               </span>
                             </TableCell>
                             <TableCell className="pr-5">
-                              <input 
+                              <input
                                 type="number" min="0" max={desc.nilai_max} step="0.5"
                                 value={formNilai[desc.id] !== undefined ? formNilai[desc.id] : ''}
                                 onChange={e => handleNilaiChange(desc.id, desc.nilai_max, e.target.value)}

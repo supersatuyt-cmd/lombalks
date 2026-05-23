@@ -4,7 +4,7 @@ import { Medal, LayoutDashboard, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 export function Header() {
-  const { user, signOut } = useAuth();
+  const { user, isJuri, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { pathname } = location;
@@ -53,24 +53,28 @@ export function Header() {
 
           {user ? (
             <>
-              <Link
-                to="/juri/penilaian"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname.startsWith('/juri') ? 'bg-blue-50 text-primary' : 'text-gray-600 hover:bg-blue-50 hover:text-primary'
-                }`}
-              >
-                <Medal className="h-4 w-4" />
-                <span className="hidden sm:inline">Penilaian</span>
-              </Link>
-              <Link
-                to="/admin"
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  pathname.startsWith('/admin') ? 'bg-blue-50 text-primary' : 'text-gray-600 hover:bg-blue-50 hover:text-primary'
-                }`}
-              >
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Admin Panel</span>
-              </Link>
+              {isJuri && (
+                <Link
+                  to="/juri/penilaian"
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    pathname.startsWith('/juri') ? 'bg-blue-50 text-primary' : 'text-gray-600 hover:bg-blue-50 hover:text-primary'
+                  }`}
+                >
+                  <Medal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Penilaian</span>
+                </Link>
+              )}
+              {isAdmin && (
+                <Link
+                  to="/admin"
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    pathname.startsWith('/admin') ? 'bg-blue-50 text-primary' : 'text-gray-600 hover:bg-blue-50 hover:text-primary'
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Admin Panel</span>
+                </Link>
+              )}
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"

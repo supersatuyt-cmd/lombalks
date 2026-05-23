@@ -23,7 +23,7 @@ const supabaseAdminAuth = createClient(
 );
 
 export default function AdminJuri() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [juriList, setJuriList] = useState([]);
   const [bidangList, setBidangList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +31,10 @@ export default function AdminJuri() {
 
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [formData, setFormData] = useState({ nama: '', bidang_lomba_id: '', email: '', password: '' });
+  // formData: untuk tambah/edit juri
+  // selectedBidangIds: array bidang yang dipilih (multi-select)
+  const [formData, setFormData] = useState({ nama: '', email: '', password: '' });
+  const [selectedBidangIds, setSelectedBidangIds] = useState([]);
   const [saving, setSaving] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [toast, setToast] = useState(null);
@@ -52,82 +55,121 @@ export default function AdminJuri() {
       supabase.from('bidang_lomba').select('*').order('nama')
     ]);
 
-    setJuriList(jRes.data || []);
+    // Kelompokkan juri berdasarkan user_id agar tampil per orang (bukan per row)
+    const rawJuri = jRes.data || [];
+    const grouped = {};
+    rawJuri.forEach(j => {
+      if (!grouped[j.user_id]) {
+        grouped[j.user_id] = {
+          user_id: j.user_id,
+          nama: j.nama,
+          rows: []
+        };
+      }
+      grouped[j.user_id].rows.push(j);
+    });
+    setJuriList(Object.values(grouped));
     setBidangList(bRes.data || []);
     setLoading(false);
   };
 
   const handleOpenModal = (item = null) => {
     if (item) {
+      // Edit: item adalah grouped juri (punya .rows)
       setEditItem(item);
-      setFormData({
-        nama: item.nama,
-        bidang_lomba_id: item.bidang_lomba_id || '',
-        email: '',
-        password: ''
-      });
+      setFormData({ nama: item.nama, email: '', password: '' });
+      setSelectedBidangIds(item.rows.map(r => r.bidang_lomba_id).filter(Boolean));
     } else {
       setEditItem(null);
-      setFormData({ nama: '', bidang_lomba_id: '', email: '', password: '' });
+      setFormData({ nama: '', email: '', password: '' });
+      setSelectedBidangIds([]);
     }
     setShowPassword(false);
     setShowModal(true);
   };
 
+  const toggleBidang = (bidangId) => {
+    setSelectedBidangIds(prev =>
+      prev.includes(bidangId) ? prev.filter(id => id !== bidangId) : [...prev, bidangId]
+    );
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
+    if (selectedBidangIds.length === 0) {
+      showToast('Pilih minimal 1 bidang lomba!', 'error');
+      return;
+    }
     setSaving(true);
     try {
       if (editItem) {
-        // Update existing juri — only update nama and bidang_lomba_id
-        const { error } = await supabase.from('juri').update({
-          nama: formData.nama,
-          bidang_lomba_id: formData.bidang_lomba_id
-        }).eq('id', editItem.id);
+        // --- UPDATE ---
+        const existingRows = editItem.rows;
+        const existingBidangIds = existingRows.map(r => r.bidang_lomba_id);
 
-        if (error) throw error;
+        // Bidang yang perlu ditambah
+        const toAdd = selectedBidangIds.filter(id => !existingBidangIds.includes(id));
+        // Bidang yang perlu dihapus
+        const toRemove = existingRows.filter(r => !selectedBidangIds.includes(r.bidang_lomba_id));
+
+        // Update nama di semua row yang ada
+        if (existingRows.length > 0) {
+          await supabase.from('juri').update({ nama: formData.nama })
+            .eq('user_id', editItem.user_id);
+        }
+
+        // Hapus row bidang yang dihilangkan
+        for (const row of toRemove) {
+          await supabase.from('juri').delete().eq('id', row.id);
+        }
+
+        // Tambah row bidang baru
+        if (toAdd.length > 0) {
+          const insertPayload = toAdd.map(bidangId => ({
+            user_id: editItem.user_id,
+            nama: formData.nama,
+            bidang_lomba_id: bidangId
+          }));
+          const { error } = await supabase.from('juri').insert(insertPayload);
+          if (error) throw error;
+        }
+
         showToast(`Data juri "${formData.nama}" berhasil diperbarui!`);
       } else {
-        // Create new juri — need to sign up auth user first
+        // --- CREATE ---
         if (!formData.email || !formData.password) {
-          alert('Email dan password wajib diisi untuk juri baru!');
+          showToast('Email dan password wajib diisi!', 'error');
           setSaving(false);
           return;
         }
-
         if (formData.password.length < 6) {
-          alert('Password minimal 6 karakter!');
+          showToast('Password minimal 6 karakter!', 'error');
           setSaving(false);
           return;
         }
 
-        // 1. Sign up auth user (Gunakan client sekunder agar tidak melogout admin)
+        // 1. Buat akun auth (pakai client sekunder agar tidak logout admin)
         const { data: authData, error: authError } = await supabaseAdminAuth.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
 
-        if (authError) {
-          throw new Error(`Gagal membuat akun: ${authError.message}`);
-        }
+        if (authError) throw new Error(`Gagal membuat akun: ${authError.message}`);
 
         const userId = authData.user?.id;
-        if (!userId) {
-          throw new Error('User ID tidak didapatkan. Mungkin perlu konfirmasi email di Supabase.');
-        }
+        if (!userId) throw new Error('User ID tidak didapatkan.');
 
-        // 2. Insert juri record
-        const { error: insertError } = await supabase.from('juri').insert([{
+        // 2. Insert satu row per bidang lomba
+        const insertPayload = selectedBidangIds.map(bidangId => ({
           user_id: userId,
           nama: formData.nama,
-          bidang_lomba_id: formData.bidang_lomba_id
-        }]);
+          bidang_lomba_id: bidangId
+        }));
 
-        if (insertError) {
-          throw new Error(`Akun berhasil dibuat tapi gagal menyimpan data juri: ${insertError.message}`);
-        }
+        const { error: insertError } = await supabase.from('juri').insert(insertPayload);
+        if (insertError) throw new Error(`Akun dibuat tapi gagal simpan data juri: ${insertError.message}`);
 
-        showToast(`Juri "${formData.nama}" berhasil ditambahkan dengan email ${formData.email}!`);
+        showToast(`Juri "${formData.nama}" berhasil ditambahkan (${selectedBidangIds.length} bidang)!`);
       }
 
       setShowModal(false);
@@ -141,9 +183,11 @@ export default function AdminJuri() {
   };
 
   const handleDelete = async (juri) => {
-    if (!window.confirm(`Yakin ingin menghapus juri "${juri.nama}"?\n\nSeluruh data penilaian yang telah diberikan juri ini juga akan terhapus!`)) return;
+    const bidangNames = juri.rows.map(r => r.bidang_lomba?.nama || '-').join(', ');
+    if (!window.confirm(`Yakin ingin menghapus juri "${juri.nama}"?\n\nBidang: ${bidangNames}\n\nSeluruh data penilaian juga akan terhapus!`)) return;
     try {
-      const { error } = await supabase.from('juri').delete().eq('id', juri.id);
+      // Hapus semua row juri berdasarkan user_id
+      const { error } = await supabase.from('juri').delete().eq('user_id', juri.user_id);
       if (error) throw error;
       showToast(`Juri "${juri.nama}" berhasil dihapus.`);
       fetchData();
@@ -155,19 +199,21 @@ export default function AdminJuri() {
 
   if (!user) return <Navigate to="/login" replace />;
 
-  const adminEmails = ['admin@lks.com'];
-  if (!adminEmails.includes(user.email)) return <Navigate to="/admin" replace />;
+  // Hanya admin (bukan juri) yang boleh akses halaman ini
+  if (!isAdmin) return <Navigate to="/admin" replace />;
 
   const filtered = juriList.filter(j =>
     j.nama.toLowerCase().includes(search.toLowerCase()) ||
-    j.bidang_lomba?.nama?.toLowerCase().includes(search.toLowerCase()) ||
-    j.bidang_lomba?.kode?.toLowerCase().includes(search.toLowerCase())
+    j.rows.some(r =>
+      r.bidang_lomba?.nama?.toLowerCase().includes(search.toLowerCase()) ||
+      r.bidang_lomba?.kode?.toLowerCase().includes(search.toLowerCase())
+    )
   );
 
-  // Group juri by bidang for summary cards
+  // Hitung jumlah juri unik per bidang
   const bidangSummary = bidangList.map(b => ({
     ...b,
-    juriCount: juriList.filter(j => j.bidang_lomba_id === b.id).length
+    juriCount: juriList.filter(j => j.rows.some(r => r.bidang_lomba_id === b.id)).length
   }));
 
   return (
@@ -227,7 +273,7 @@ export default function AdminJuri() {
             <div className="flex items-center gap-3">
               <CardTitle>Daftar Juri</CardTitle>
               <span className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full font-medium border border-amber-100">
-                {juriList.length} total
+                {juriList.length} juri
               </span>
             </div>
             <div className="relative">
@@ -248,7 +294,6 @@ export default function AdminJuri() {
                   <TableHead className="w-12">No</TableHead>
                   <TableHead>Nama Juri</TableHead>
                   <TableHead>Bidang Lomba</TableHead>
-                  <TableHead>Kode Bidang</TableHead>
                   <TableHead className="w-28 text-center">Status</TableHead>
                   <TableHead className="w-24 text-center">Aksi</TableHead>
                 </TableRow>
@@ -256,7 +301,7 @@ export default function AdminJuri() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-16">
+                    <TableCell colSpan={5} className="text-center py-16">
                       <div className="flex flex-col items-center gap-3 text-gray-400">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500"></div>
                         <span>Memuat data juri...</span>
@@ -265,7 +310,7 @@ export default function AdminJuri() {
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-16">
+                    <TableCell colSpan={5} className="text-center py-16">
                       <div className="flex flex-col items-center gap-2 text-gray-400">
                         <Gavel className="h-10 w-10 text-gray-300" />
                         <span className="text-sm">Tidak ada juri ditemukan.</span>
@@ -274,7 +319,7 @@ export default function AdminJuri() {
                     </TableCell>
                   </TableRow>
                 ) : filtered.map((juri, idx) => (
-                  <TableRow key={juri.id}>
+                  <TableRow key={juri.user_id}>
                     <TableCell className="text-gray-400 font-medium">{idx + 1}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -283,21 +328,20 @@ export default function AdminJuri() {
                         </div>
                         <div>
                           <p className="font-semibold text-dark">{juri.nama}</p>
-                          <p className="text-xs text-gray-400">ID: {juri.id?.substring(0, 8)}...</p>
+                          <p className="text-xs text-gray-400">{juri.rows.length} bidang lomba</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm text-gray-700">{juri.bidang_lomba?.nama || '-'}</span>
-                    </TableCell>
-                    <TableCell>
-                      {juri.bidang_lomba?.kode ? (
-                        <span className="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-md font-mono border border-amber-100">
-                          {juri.bidang_lomba.kode}
-                        </span>
-                      ) : (
-                        <span className="text-gray-300">-</span>
-                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {juri.rows.map(r => (
+                          <span key={r.id} className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-md font-medium border border-amber-100">
+                            <span className="font-mono">{r.bidang_lomba?.kode}</span>
+                            <span className="text-amber-500">·</span>
+                            {r.bidang_lomba?.nama}
+                          </span>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className="inline-flex items-center gap-1 text-xs bg-green-50 text-green-700 px-2.5 py-1 rounded-full border border-green-100">
@@ -365,20 +409,28 @@ export default function AdminJuri() {
                   />
                 </div>
 
-                {/* Bidang Lomba */}
+                {/* Bidang Lomba — multi-select checkbox */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Bidang Lomba *</label>
-                  <select
-                    required
-                    value={formData.bidang_lomba_id}
-                    onChange={e => setFormData({ ...formData, bidang_lomba_id: e.target.value })}
-                    className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-amber-500 outline-none bg-white transition-all"
-                  >
-                    <option value="" disabled>Pilih Bidang Lomba...</option>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                    Bidang Lomba * <span className="text-xs text-gray-400 font-normal">(pilih satu atau lebih)</span>
+                  </label>
+                  <div className="border rounded-lg divide-y max-h-48 overflow-y-auto">
                     {bidangList.map(b => (
-                      <option key={b.id} value={b.id}>{b.nama} ({b.kode})</option>
+                      <label key={b.id} className="flex items-center gap-3 px-3 py-2.5 hover:bg-amber-50 cursor-pointer transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={selectedBidangIds.includes(b.id)}
+                          onChange={() => toggleBidang(b.id)}
+                          className="w-4 h-4 accent-amber-500 rounded"
+                        />
+                        <span className="text-xs font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">{b.kode}</span>
+                        <span className="text-sm text-gray-700">{b.nama}</span>
+                      </label>
                     ))}
-                  </select>
+                  </div>
+                  {selectedBidangIds.length > 0 && (
+                    <p className="text-xs text-amber-600 mt-1">{selectedBidangIds.length} bidang dipilih</p>
+                  )}
                 </div>
 
                 {/* Credentials — only for new juri */}

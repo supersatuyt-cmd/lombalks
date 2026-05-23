@@ -7,7 +7,7 @@ import { Settings, Users, BookOpen, Building2, Gavel, ChevronRight } from 'lucid
 import { supabase } from '../../lib/supabase';
 
 export default function AdminDashboard() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [stats, setStats] = useState({ peserta: 0, modul: 0, bidang: 0, sekolah: 0, juri: 0 });
 
   useEffect(() => {
@@ -72,11 +72,8 @@ export default function AdminDashboard() {
     }
   ];
 
-  // Daftar email yang diizinkan mengelola juri
-  const adminEmails = ['admin@lks.com'];
-  const isSuperAdmin = user && adminEmails.includes(user.email);
-
-  if (isSuperAdmin) {
+  // Card Kelola Juri hanya untuk admin (user yang tidak terdaftar sebagai juri)
+  if (isAdmin) {
     menuItems.push({
       title: 'Kelola Juri',
       description: 'Manajemen akun dan penugasan juri untuk setiap bidang lomba',

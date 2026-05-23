@@ -16,7 +16,7 @@ export default function Login() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const { signIn } = useAuth();
+  const { signIn, isJuri, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,13 +66,24 @@ export default function Login() {
     try {
       const { error } = await signIn(email, password);
       if (error) throw error;
-      navigate('/juri/penilaian');
+      // Redirect ditangani oleh useEffect di bawah setelah authLoading selesai
     } catch (err) {
       setError(err.message || 'Gagal login. Cek kembali email dan password Anda.');
-    } finally {
       setLoading(false);
     }
   };
+
+  // Redirect setelah login berhasil dan auth context selesai load
+  useEffect(() => {
+    if (!authLoading && loading) {
+      // authLoading selesai setelah login
+      if (isAdmin) {
+        navigate('/admin');
+      } else if (isJuri) {
+        navigate('/juri/penilaian');
+      }
+    }
+  }, [authLoading, isAdmin, isJuri]);
 
   const handleResetPassword = async (e) => {
     e.preventDefault();
@@ -97,9 +108,13 @@ export default function Login() {
       if (error) throw error;
       
       setRecoverySuccess(true);
-      // Redirect to dashboard after 3 seconds
+      // Redirect setelah 3 detik berdasarkan role
       setTimeout(() => {
-        navigate('/juri/penilaian');
+        if (isAdmin) {
+          navigate('/admin');
+        } else {
+          navigate('/juri/penilaian');
+        }
       }, 3000);
       
     } catch (err) {
