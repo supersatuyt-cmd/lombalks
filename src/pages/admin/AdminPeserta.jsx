@@ -156,11 +156,11 @@ export default function AdminPeserta() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-gray-400">Memuat data...</TableCell>
+                    <TableCell colSpan={6} className="text-center py-12 text-gray-400">Memuat data...</TableCell>
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12 text-gray-400">Tidak ada peserta ditemukan.</TableCell>
+                    <TableCell colSpan={6} className="text-center py-12 text-gray-400">Tidak ada peserta ditemukan.</TableCell>
                   </TableRow>
                 ) : filtered.map((peserta, idx) => (
                   <TableRow key={peserta.id}>

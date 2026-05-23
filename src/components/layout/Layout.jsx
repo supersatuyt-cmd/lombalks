@@ -64,17 +64,16 @@ export function Header() {
                   <span className="hidden sm:inline">Penilaian</span>
                 </Link>
               )}
-              {isAdmin && (
-                <Link
-                  to="/admin"
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    pathname.startsWith('/admin') ? 'bg-blue-50 text-primary' : 'text-gray-600 hover:bg-blue-50 hover:text-primary'
-                  }`}
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Admin Panel</span>
-                </Link>
-              )}
+              {/* Admin Panel tampil untuk semua user yang login */}
+              <Link
+                to="/admin"
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  pathname.startsWith('/admin') ? 'bg-blue-50 text-primary' : 'text-gray-600 hover:bg-blue-50 hover:text-primary'
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Admin Panel</span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-red-500 hover:bg-red-50 transition-colors"

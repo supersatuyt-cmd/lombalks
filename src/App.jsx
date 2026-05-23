@@ -23,6 +23,16 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// Route khusus admin — juri diarahkan ke halaman penilaian
+function AdminRoute({ children }) {
+  const { user, loading, isAdmin } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center text-gray-400">Memuat...</div>
+  );
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/juri/penilaian" replace />;
+  return children;
+}
 function AppRoutes() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -46,13 +56,14 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/juri/penilaian" element={<ProtectedRoute><FormPenilaian /></ProtectedRoute>} />
       
-      {/* Admin Routes */}
+      {/* Admin Routes — peserta/modul/bidang/sekolah bisa diakses juri (read-only) */}
       <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
       <Route path="/admin/modul" element={<ProtectedRoute><AdminModul /></ProtectedRoute>} />
       <Route path="/admin/peserta" element={<ProtectedRoute><AdminPeserta /></ProtectedRoute>} />
       <Route path="/admin/bidang" element={<ProtectedRoute><AdminBidang /></ProtectedRoute>} />
       <Route path="/admin/sekolah" element={<ProtectedRoute><AdminSekolah /></ProtectedRoute>} />
-      <Route path="/admin/juri" element={<ProtectedRoute><AdminJuri /></ProtectedRoute>} />
+      {/* Kelola Juri — hanya admin */}
+      <Route path="/admin/juri" element={<AdminRoute><AdminJuri /></AdminRoute>} />
     </Routes>
   );
 }
