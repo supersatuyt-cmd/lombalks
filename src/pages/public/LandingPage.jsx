@@ -106,8 +106,8 @@ export default function LandingPage() {
                   <p className="text-sm text-gray-400 font-medium">Bidang Lomba</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-extrabold text-dark">20
-                    +</p>
+                  <p className="text-3xl font-extrabold text-dark">19
+                    </p>
                   <p className="text-sm text-gray-400 font-medium">Peserta</p>
                 </div>
                 <div>
