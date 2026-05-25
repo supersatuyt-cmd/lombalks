@@ -30,37 +30,45 @@ export default function Dashboard() {
   const fetchDashboard = async () => {
     const { data: bidang } = await supabase.from('bidang_lomba').select('*, juri(id)').order('nama');
     const { data: peserta } = await supabase.from('peserta').select('id, bidang_lomba_id');
-    const { data: penilaian } = await supabase.from('penilaian').select('juri_id, peserta_id, deskripsi_nilai_id');
+    const { data: penilaian } = await supabase.from('penilaian').select('juri_id, peserta_id, deskripsi_nilai_id, nilai');
+    const { data: modulList } = await supabase.from('modul').select('id, bidang_lomba_id');
+    const { data: deskripsiList } = await supabase.from('deskripsi_nilai').select('id, modul_id');
 
     if (!bidang) return;
 
     const result = bidang.map(b => {
       const juriIds = (b.juri || []).map(j => j.id);
       const pesertaIds = (peserta || []).filter(p => p.bidang_lomba_id === b.id).map(p => p.id);
-      const totalCombinations = juriIds.length * pesertaIds.length;
+      
+      const bidangModuls = (modulList || []).filter(m => m.bidang_lomba_id === b.id).map(m => m.id);
+      const bidangDeskripsi = (deskripsiList || []).filter(d => bidangModuls.includes(d.modul_id)).map(d => d.id);
+      const totalDeskripsi = bidangDeskripsi.length;
 
-      // Hitung progress secara granular (jumlah peserta yang sudah dinilai oleh juri)
-      const expectedEvaluations = juriIds.length * pesertaIds.length;
+      // Hitung progress berdasarkan jumlah kolom nilai (deskripsi_nilai) yang sudah diisi (> 0)
+      const expectedEvaluations = juriIds.length * pesertaIds.length * totalDeskripsi;
       let completedEvaluations = 0;
 
       if (expectedEvaluations > 0) {
-        const uniqueEvaluations = new Set();
         (penilaian || []).forEach(p => {
-          if (juriIds.includes(p.juri_id) && pesertaIds.includes(p.peserta_id)) {
-            uniqueEvaluations.add(`${p.juri_id}-${p.peserta_id}`);
+          if (juriIds.includes(p.juri_id) && pesertaIds.includes(p.peserta_id) && p.nilai > 0) {
+            completedEvaluations++;
           }
         });
-        completedEvaluations = uniqueEvaluations.size;
       }
 
       // Progress bar percentage
       const progress = expectedEvaluations > 0 ? (completedEvaluations / expectedEvaluations) * 100 : 0;
 
-      // Juri selesai (yang sudah menilai SEMUA peserta)
+      // Juri selesai (yang sudah mengisi semua form > 0 untuk seluruh peserta)
       const juriSelesai = juriIds.filter(juriId => {
-        return pesertaIds.every(pesertaId =>
-          (penilaian || []).some(p => p.juri_id === juriId && p.peserta_id === pesertaId)
-        );
+        let juriCompleted = 0;
+        (penilaian || []).forEach(p => {
+          if (p.juri_id === juriId && pesertaIds.includes(p.peserta_id) && p.nilai > 0) {
+            juriCompleted++;
+          }
+        });
+        const requiredForJuri = pesertaIds.length * totalDeskripsi;
+        return requiredForJuri > 0 && juriCompleted === requiredForJuri;
       }).length;
 
       return {
@@ -167,6 +175,138 @@ export default function Dashboard() {
             </Table>
           </CardContent>
         </Card>
+
+        {/* Hasil Karya Peserta (SharePoint Links) */}
+        <Card className="border border-blue-100 bg-white/60 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-50/50 to-transparent border-b border-blue-50/50">
+            <CardTitle className="flex items-center gap-2">
+              <span className="bg-blue-100 text-blue-700 w-8 h-8 rounded-lg flex items-center justify-center">📂</span>
+              Akses Hasil Karya Peserta
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 sm:p-8">
+            <style>{`
+              .it-btn {
+                position: relative;
+                min-width: 200px;
+                height: 90px;
+                border-radius: 22px;
+                text-decoration: none;
+                overflow: hidden;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-direction: column;
+                background: rgba(255,255,255,0.75);
+                border: 1px solid rgba(120,190,255,0.35);
+                backdrop-filter: blur(12px);
+                color: #2196f3;
+                font-weight: 700;
+                font-size: 1.25rem;
+                letter-spacing: 1px;
+                transition: all .35s ease;
+                box-shadow: 0 10px 25px rgba(33,150,243,0.08);
+                text-transform: uppercase;
+              }
+
+              .it-btn.disabled {
+                cursor: not-allowed;
+              }
+
+              .it-btn::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -130%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(120deg, transparent, rgba(255,255,255,.7), transparent);
+                transition: .7s;
+              }
+
+              .it-btn:hover::before {
+                left: 130%;
+              }
+
+              .it-btn:hover {
+                transform: translateY(-6px) scale(1.03);
+                background: linear-gradient(135deg, #6ec6ff, #42a5f5);
+                color: white;
+                box-shadow: 0 18px 35px rgba(33,150,243,0.25);
+              }
+
+              .it-title {
+                transition: .3s;
+                z-index: 2;
+                font-size: 1.25rem;
+                transform-origin: top center;
+              }
+
+              .it-desc {
+                position: absolute;
+                bottom: 8px;
+                font-size: 0.6rem;
+                font-weight: 600;
+                opacity: 0;
+                transform: translateY(10px);
+                transition: .3s;
+                text-align: center;
+                padding: 0 12px;
+                line-height: 1.15;
+                width: 100%;
+              }
+
+              .it-btn:hover .it-title {
+                transform: translateY(-16px) scale(0.9);
+              }
+
+              .it-btn:hover .it-desc {
+                opacity: 1;
+                transform: translateY(0);
+              }
+              
+              .it-btn-badge {
+                position: absolute;
+                top: 8px;
+                right: 12px;
+                font-size: 0.6rem;
+                font-weight: 600;
+                color: #ef4444; /* Red color for 'Progress' to make it slightly visible */
+                background: rgba(254,226,226,0.8);
+                padding: 2px 6px;
+                border-radius: 4px;
+                transition: .3s;
+              }
+              .it-btn:hover .it-btn-badge {
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-5px);
+              }
+            `}</style>
+            <div className="flex flex-wrap gap-5 justify-center sm:justify-start">
+              {loading ? (
+                <div className="text-gray-400 text-sm">Memuat link...</div>
+              ) : bidangList.map((bidang) => {
+                const hasLink = !!bidang.sharepoint_link;
+                return (
+                  <a
+                    key={bidang.id}
+                    href={hasLink ? bidang.sharepoint_link : '#'}
+                    target={hasLink ? '_blank' : '_self'}
+                    rel="noopener noreferrer"
+                    onClick={(e) => !hasLink && e.preventDefault()}
+                    className={`it-btn ${!hasLink ? 'disabled' : ''}`}
+                  >
+                    <span className="it-title">{bidang.kode}</span>
+                    <span className="it-desc">{bidang.nama}</span>
+                    {!hasLink && <span className="it-btn-badge">Progress</span>}
+                  </a>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </PageWrapper>
   );

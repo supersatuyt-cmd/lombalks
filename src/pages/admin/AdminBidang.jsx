@@ -16,7 +16,7 @@ export default function AdminBidang() {
   
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState(null);
-  const [formData, setFormData] = useState({ nama: '', kode: '', deskripsi: '' });
+  const [formData, setFormData] = useState({ nama: '', kode: '', deskripsi: '', sharepoint_link: '' });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -33,10 +33,10 @@ export default function AdminBidang() {
   const handleOpenModal = (item = null) => {
     if (item) {
       setEditItem(item);
-      setFormData({ nama: item.nama, kode: item.kode, deskripsi: item.deskripsi || '' });
+      setFormData({ nama: item.nama, kode: item.kode, deskripsi: item.deskripsi || '', sharepoint_link: item.sharepoint_link || '' });
     } else {
       setEditItem(null);
-      setFormData({ nama: '', kode: '', deskripsi: '' });
+      setFormData({ nama: '', kode: '', deskripsi: '', sharepoint_link: '' });
     }
     setShowModal(true);
   };
@@ -49,13 +49,15 @@ export default function AdminBidang() {
         await supabase.from('bidang_lomba').update({
           nama: formData.nama,
           kode: formData.kode,
-          deskripsi: formData.deskripsi
+          deskripsi: formData.deskripsi,
+          sharepoint_link: formData.sharepoint_link
         }).eq('id', editItem.id);
       } else {
         await supabase.from('bidang_lomba').insert([{
           nama: formData.nama,
           kode: formData.kode,
-          deskripsi: formData.deskripsi
+          deskripsi: formData.deskripsi,
+          sharepoint_link: formData.sharepoint_link
         }]);
       }
       setShowModal(false);
@@ -175,6 +177,11 @@ export default function AdminBidang() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Deskripsi</label>
                   <textarea value={formData.deskripsi} onChange={e => setFormData({...formData, deskripsi: e.target.value})} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" rows="3" placeholder="Deskripsi opsional..." />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Link SharePoint (Opsional)</label>
+                  <input type="url" value={formData.sharepoint_link} onChange={e => setFormData({...formData, sharepoint_link: e.target.value})} className="w-full p-2.5 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none" placeholder="https://sharepoint.com/..." />
+                  <p className="text-xs text-gray-500 mt-1">Link untuk melihat hasil karya/berkas lomba peserta (bisa juga diisi oleh Juri).</p>
                 </div>
                 <div className="pt-2 flex gap-3">
                   <Button type="button" variant="outline" onClick={() => setShowModal(false)} className="w-full">Batal</Button>

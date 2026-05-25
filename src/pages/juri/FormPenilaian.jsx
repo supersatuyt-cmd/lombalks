@@ -23,6 +23,10 @@ export default function FormPenilaian() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState(null);
+  
+  // SharePoint Link state
+  const [sharepointLink, setSharepointLink] = useState('');
+  const [savingLink, setSavingLink] = useState(false);
 
   // Juri yang aktif saat ini
   const activeJuri = juriList[activeBidangIdx] || null;
@@ -50,15 +54,17 @@ export default function FormPenilaian() {
   const fetchData = async (juri) => {
     setLoading(true);
     try {
-      const [pesertaRes, modulRes] = await Promise.all([
+      const [pesertaRes, modulRes, bidangRes] = await Promise.all([
         supabase.from('peserta').select('*, sekolah(nama)').eq('bidang_lomba_id', juri.bidang_lomba_id).order('nomor_peserta'),
         supabase.from('modul').select('*, deskripsi_nilai(*)').eq('bidang_lomba_id', juri.bidang_lomba_id).order('urutan'),
+        supabase.from('bidang_lomba').select('sharepoint_link').eq('id', juri.bidang_lomba_id).single(),
       ]);
       setPesertaList(pesertaRes.data || []);
       setModulList((modulRes.data || []).map(m => ({
         ...m,
         deskripsi_nilai: (m.deskripsi_nilai || []).sort((a, b) => a.urutan - b.urutan),
       })));
+      setSharepointLink(bidangRes.data?.sharepoint_link || '');
     } catch (err) {
       console.error(err);
       showToast('Gagal memuat data', 'error');
@@ -118,6 +124,22 @@ export default function FormPenilaian() {
       if (pesertaIndex < pesertaList.length - 1) {
         setTimeout(() => setPesertaIndex(i => i + 1), 1000);
       }
+    }
+  };
+
+  const handleSaveLink = async () => {
+    if (!activeJuri) return;
+    setSavingLink(true);
+    const { error } = await supabase
+      .from('bidang_lomba')
+      .update({ sharepoint_link: sharepointLink })
+      .eq('id', activeJuri.bidang_lomba_id);
+    
+    setSavingLink(false);
+    if (error) {
+      showToast('Gagal menyimpan link: ' + error.message, 'error');
+    } else {
+      showToast('Link file berhasil disimpan!');
     }
   };
 
@@ -215,6 +237,27 @@ export default function FormPenilaian() {
             </div>
           </div>
         )}
+
+        {/* Card Upload Link SharePoint */}
+        <Card className="border border-blue-100 bg-white/60 backdrop-blur-sm">
+          <CardContent className="p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex-1 w-full">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Link Drive / SharePoint Hasil Karya Peserta
+              </label>
+              <input
+                type="url"
+                value={sharepointLink}
+                onChange={(e) => setSharepointLink(e.target.value)}
+                placeholder="https://sharepoint.com/... atau google drive link"
+                className="w-full p-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all text-sm"
+              />
+            </div>
+            <Button onClick={handleSaveLink} disabled={savingLink} className="w-full sm:w-auto mt-2 sm:mt-6 whitespace-nowrap shadow-sm">
+              {savingLink ? 'Menyimpan...' : 'Simpan Link'}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Tab Peserta */}
         <div className="flex gap-2 overflow-x-auto pb-1">
