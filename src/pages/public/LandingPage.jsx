@@ -121,9 +121,6 @@ export default function LandingPage() {
                 <Link to="/klasemen" className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary/90 hover:to-secondary/90 text-white rounded-full font-bold transition-all shadow-xl shadow-primary/30 flex items-center justify-center gap-2.5 hover:-translate-y-1 text-base">
                   <Trophy className="h-5 w-5" /> Lihat Live Klasemen
                 </Link>
-                <Link to="/login" className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-gray-200 text-dark hover:border-primary hover:text-primary rounded-full font-bold transition-all flex items-center justify-center gap-2.5 hover:-translate-y-1 shadow-sm text-base">
-                  <Users className="h-5 w-5" /> Portal Juri
-                </Link>
               </div>
             </div>
 
@@ -458,7 +455,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/lks-icon.png" alt="LKS" className="w-9 h-9 object-contain" />
+              <img src="/lks-removebg-preview.png" alt="LKS" className="w-9 h-9 object-contain" />
               <span className="font-extrabold text-xl tracking-tight">LKS<span className="text-accent">Dikmen</span></span>
             </div>
             <p className="text-gray-400 max-w-md text-sm leading-relaxed mb-8">

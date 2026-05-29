@@ -59,6 +59,9 @@ export default function Dashboard() {
       // Progress bar percentage
       const progress = expectedEvaluations > 0 ? (completedEvaluations / expectedEvaluations) * 100 : 0;
 
+      // Juri yang sudah ditugaskan (assigned)
+      const juriDitugaskan = juriIds.length;
+
       // Juri selesai (yang sudah mengisi semua form > 0 untuk seluruh peserta)
       const juriSelesai = juriIds.filter(juriId => {
         let juriCompleted = 0;
@@ -74,6 +77,7 @@ export default function Dashboard() {
       return {
         ...b,
         juriSelesai,
+        juriDitugaskan,
         totalJuri: juriIds.length,
         totalPeserta: pesertaIds.length,
         progress,
@@ -159,8 +163,8 @@ export default function Dashboard() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={bidang.progress === 100 ? 'success' : bidang.progress === 0 ? 'default' : 'warning'}>
-                        {bidang.juriSelesai}/{bidang.totalJuri} Juri
+                      <Badge variant={bidang.progress === 100 ? 'success' : bidang.juriDitugaskan === 0 ? 'default' : 'warning'}>
+                        {bidang.juriSelesai}/{bidang.juriDitugaskan} Juri
                       </Badge>
                     </TableCell>
                     <TableCell className="text-center">

@@ -18,17 +18,63 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-blue-100 bg-white/90 backdrop-blur-md shadow-sm">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         {/* Logo & Title */}
-        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <img
-            src="/lks-icon.png"
-            alt="Logo LKS Dikmen"
-            className="h-10 w-10 object-contain"
-          />
+        <Link to="/" className="flex items-center gap-3 group">
+          {/* Logo dengan animasi */}
+          <div className="relative">
+            {/* Glow effect background */}
+            <div className="absolute inset-0 bg-blue-400/20 rounded-full blur-md scale-110 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            
+            {/* Logo PNG transparan dengan multiple animasi */}
+            <img
+              src="/lks-removebg-preview.png"
+              alt="Logo LKS Dikmen"
+              className="h-10 w-10 object-contain relative z-10 transition-all duration-300 group-hover:scale-110 animate-wave-hand"
+            />
+            
+            {/* Sparkle effect saat hover */}
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full opacity-0 group-hover:opacity-100 group-hover:animate-ping"></div>
+          </div>
+          
           <div className="hidden sm:flex flex-col leading-tight">
-            <span className="text-base font-bold text-dark">LKS Dikmen</span>
+            <span className="text-base font-bold text-dark group-hover:text-primary transition-colors duration-300">LKS Dikmen</span>
             <span className="text-xs text-gray-500">Kabupaten Kutai Timur</span>
           </div>
         </Link>
+
+        {/* CSS Animations */}
+        <style jsx>{`
+          @keyframes wave-hand {
+            0%, 100% {
+              transform: rotate(0deg);
+            }
+            10%, 30% {
+              transform: rotate(-10deg);
+            }
+            20%, 40% {
+              transform: rotate(10deg);
+            }
+            50% {
+              transform: rotate(0deg);
+            }
+          }
+          
+          @keyframes float-gentle {
+            0%, 100% {
+              transform: translateY(0px);
+            }
+            50% {
+              transform: translateY(-3px);
+            }
+          }
+          
+          .animate-wave-hand {
+            animation: wave-hand 2.5s ease-in-out infinite, float-gentle 3s ease-in-out infinite;
+          }
+          
+          .animate-wave-hand:hover {
+            animation: wave-hand 0.6s ease-in-out infinite, float-gentle 3s ease-in-out infinite;
+          }
+        `}</style>
 
         {/* Navigation */}
         <nav className="flex items-center gap-1">
@@ -125,7 +171,7 @@ export function PageWrapper({ children }) {
 
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src="/lks-icon.png" alt="LKS" className="w-9 h-9 object-contain" />
+              <img src="/lks-removebg-preview.png" alt="LKS" className="w-9 h-9 object-contain" />
               <span className="font-extrabold text-xl tracking-tight">LKS<span className="text-blue-400">Dikmen</span></span>
             </div>
             <p className="text-gray-400 max-w-md text-sm leading-relaxed mb-8">
