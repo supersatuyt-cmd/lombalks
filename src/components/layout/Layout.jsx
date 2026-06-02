@@ -96,6 +96,15 @@ export function Header() {
             <Medal className="h-4 w-4" />
             <span className="hidden sm:inline">Klasemen</span>
           </Link>
+          <Link
+            to="/pemenang"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+              pathname === '/pemenang' ? 'bg-yellow-50 text-yellow-600' : 'text-gray-600 hover:bg-yellow-50 hover:text-yellow-600'
+            }`}
+          >
+            <Medal className="h-4 w-4" />
+            <span className="hidden sm:inline">🏆 Pemenang</span>
+          </Link>
 
           {user ? (
             <>

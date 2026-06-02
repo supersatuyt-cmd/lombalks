@@ -5,6 +5,7 @@ import LandingPage from './pages/public/LandingPage';
 import Dashboard from './pages/public/Dashboard';
 import DetailBidang from './pages/public/DetailBidang';
 import DetailPeserta from './pages/public/DetailPeserta';
+import PengumumanPemenang from './pages/public/PengumumanPemenang';
 import Login from './pages/juri/Login';
 import FormPenilaian from './pages/juri/FormPenilaian';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -51,6 +52,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/klasemen" element={<Dashboard />} />
+      <Route path="/pemenang" element={<PengumumanPemenang />} />
       <Route path="/bidang/:kode" element={<DetailBidang />} />
       <Route path="/peserta/:slug" element={<DetailPeserta />} />
       <Route path="/login" element={<Login />} />
