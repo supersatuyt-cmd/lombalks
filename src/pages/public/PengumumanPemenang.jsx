@@ -158,9 +158,9 @@ export default function PengumumanPemenang() {
 
   return (
     <PageWrapper>
-      {/* Hero Banner */}
-      <div className="hero-print relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 p-8 md:p-12 text-white">
-        <div className="absolute top-0 right-0 opacity-10 print:hidden">
+      {/* Hero Banner - Screen Only */}
+      <div className="screen-only relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-blue-500 via-blue-600 to-purple-600 p-8 md:p-12 text-white">
+        <div className="absolute top-0 right-0 opacity-10">
           <Trophy className="w-64 h-64" />
         </div>
         
@@ -194,8 +194,8 @@ export default function PengumumanPemenang() {
         </div>
       </div>
 
-      {/* Filter Kategori */}
-      <div className="mb-8 print:hidden">
+      {/* Filter Kategori - Screen Only */}
+      <div className="screen-only mb-8">
         <h3 className="text-sm font-semibold text-gray-600 mb-3">Pilih Bidang Lomba</h3>
         <div className="flex flex-wrap gap-2">
           <button
@@ -222,107 +222,153 @@ export default function PengumumanPemenang() {
         </div>
       </div>
 
-      {/* Winners List */}
+      {/* Winners Content */}
       {loading ? (
         <div className="text-center py-20">
           <div className="inline-block w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
           <p className="mt-4 text-gray-500">Memuat data pemenang...</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {filteredWinners.map((item, idx) => {
-            const iconData = getBidangIcon(item.bidang.kode);
-            
-            return (
-              <div key={item.bidang.id} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
-                {/* Card Container dengan padding putih */}
-                <div className="print-card bg-white rounded-3xl shadow-md border border-gray-200 p-6">
-                  <div className="flex flex-col md:flex-row gap-6">
-                    {/* Left Side - Icon & Info Bidang dengan background abu */}
-                    <div className="print-bidang-info flex-shrink-0 md:w-72 bg-gray-50 rounded-2xl p-6">
-                      <div className="flex items-start gap-4 mb-4">
-                        {/* Icon Gradient */}
-                        <div className={`w-14 h-14 bg-gradient-to-br ${iconData.bg} rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0`}>
-                          {iconData.emoji}
-                        </div>
-                        
-                        {/* Kode Badge */}
-                        <div>
-                          <span className="inline-block px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-500 mb-2">
-                            {item.bidang.kode.toUpperCase()}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Nama Bidang */}
-                      <h2 className="text-lg font-bold text-dark leading-tight mb-3">
-                        {item.bidang.nama}
-                      </h2>
-                      
-                      {/* Deskripsi */}
-                      <p className="text-sm text-gray-600 leading-relaxed">
-                        Lomba kompetensi tingkat SMK
-                      </p>
-                    </div>
-
-                    {/* Right Side - 3 Winner Cards Horizontal */}
-                    <div className="print-winners-grid flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {item.topPeserta.map((peserta) => {
-                        const badge = getRankBadge(peserta.rank);
-                        
-                        return (
-                          <div
-                            key={peserta.id}
-                            className={`print-winner-card rank-${peserta.rank} relative ${badge.bg} border-2 ${badge.border} rounded-2xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-lg`}
-                          >
-                            {/* Medal Icon TOP */}
-                            <div className="flex justify-center mb-3">
-                              <span className="text-5xl">{badge.icon}</span>
-                            </div>
-
-                            {/* Rank Label */}
-                            <div className="text-center mb-4">
-                              <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold ${badge.textBg} ${badge.textColor} uppercase tracking-wide`}>
-                                {badge.label}
-                              </span>
-                            </div>
-
-                            {/* Nama Peserta */}
-                            <h3 className="text-base font-bold text-dark text-center mb-2 leading-tight min-h-[40px] flex items-center justify-center">
-                              {peserta.nama}
-                            </h3>
-
-                            {/* Sekolah */}
-                            <p className="school text-xs text-gray-600 text-center mb-4 leading-snug">
-                              {peserta.sekolah}
-                            </p>
-
-                            {/* Divider */}
-                            <div className="h-px bg-gray-300 mb-3"></div>
-
-                            {/* Label Total Nilai */}
-                            <p className="text-[10px] text-gray-500 uppercase tracking-wider text-center mb-1">
-                              Total Nilai
-                            </p>
-                            
-                            {/* Total Nilai Besar */}
-                            <p className="score text-4xl font-extrabold text-dark text-center">
-                              {peserta.totalNilai.toFixed(2)}
-                            </p>
+        <>
+          {/* Screen Version */}
+          <div className="screen-only space-y-6">
+            {filteredWinners.map((item, idx) => {
+              const iconData = getBidangIcon(item.bidang.kode);
+              
+              return (
+                <div key={item.bidang.id} className="animate-fade-in" style={{ animationDelay: `${idx * 0.1}s` }}>
+                  <div className="bg-white rounded-3xl shadow-md border border-gray-200 p-6">
+                    <div className="flex flex-col md:flex-row gap-6">
+                      <div className="flex-shrink-0 md:w-72 bg-gray-50 rounded-2xl p-6">
+                        <div className="flex items-start gap-4 mb-4">
+                          <div className={`w-14 h-14 bg-gradient-to-br ${iconData.bg} rounded-xl flex items-center justify-center text-2xl shadow-lg flex-shrink-0`}>
+                            {iconData.emoji}
                           </div>
-                        );
-                      })}
+                          <div>
+                            <span className="inline-block px-3 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-500 mb-2">
+                              {item.bidang.kode.toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        <h2 className="text-lg font-bold text-dark leading-tight mb-3">
+                          {item.bidang.nama}
+                        </h2>
+                        <p className="text-sm text-gray-600 leading-relaxed">
+                          Lomba kompetensi tingkat SMK
+                        </p>
+                      </div>
+
+                      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {item.topPeserta.map((peserta) => {
+                          const badge = getRankBadge(peserta.rank);
+                          
+                          return (
+                            <div
+                              key={peserta.id}
+                              className={`relative ${badge.bg} border-2 ${badge.border} rounded-2xl p-5 transition-all duration-300 hover:scale-105 hover:shadow-lg`}
+                            >
+                              <div className="flex justify-center mb-3">
+                                <span className="text-5xl">{badge.icon}</span>
+                              </div>
+                              <div className="text-center mb-4">
+                                <span className={`inline-block px-3 py-1 rounded-full text-[10px] font-bold ${badge.textBg} ${badge.textColor} uppercase tracking-wide`}>
+                                  {badge.label}
+                                </span>
+                              </div>
+                              <h3 className="text-base font-bold text-dark text-center mb-2 leading-tight min-h-[40px] flex items-center justify-center">
+                                {peserta.nama}
+                              </h3>
+                              <p className="text-xs text-gray-600 text-center mb-4 leading-snug">
+                                {peserta.sekolah}
+                              </p>
+                              <div className="h-px bg-gray-300 mb-3"></div>
+                              <p className="text-[10px] text-gray-500 uppercase tracking-wider text-center mb-1">
+                                Total Nilai
+                              </p>
+                              <p className="text-4xl font-extrabold text-dark text-center">
+                                {peserta.totalNilai.toFixed(2)}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
 
-      {/* Footer Actions */}
-      <div className="mt-12 grid md:grid-cols-3 gap-4 print:hidden">
+          {/* Print Version - Compact Table */}
+          <div className="print-container">
+            <div className="print-header">
+              <div className="print-title-bar">
+                <div>
+                  <h1 className="print-main-title">PENGUMUMAN PEMENANG</h1>
+                  <p className="print-subtitle">Lomba Kompetensi Siswa SMK - Tahun 2026</p>
+                </div>
+                <div className="print-stats">
+                  <span className="print-stat-item">{stats.bidang} Bidang</span>
+                  <span className="print-stat-divider">•</span>
+                  <span className="print-stat-item">{stats.peserta} Peserta</span>
+                  <span className="print-stat-divider">•</span>
+                  <span className="print-stat-item">{stats.pemenang} Pemenang</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="print-table">
+            {winners.map((item, idx) => {
+              const iconData = getBidangIcon(item.bidang.kode);
+              
+              return (
+                <div key={item.bidang.id} className="print-row">
+                  {/* Bidang Info Column */}
+                  <div className="print-bidang-col">
+                    <div className="print-icon">{iconData.emoji}</div>
+                    <div className="print-bidang-text">
+                      <div className="print-kode">{item.bidang.kode.toUpperCase()}</div>
+                      <div className="print-nama-bidang">{item.bidang.nama}</div>
+                    </div>
+                  </div>
+
+                  {/* Winners Columns */}
+                  {[1, 2, 3].map(rank => {
+                    const peserta = item.topPeserta.find(p => p.rank === rank);
+                    const badge = getRankBadge(rank);
+                    
+                    if (!peserta) {
+                      return <div key={rank} className="print-winner-col print-empty">-</div>;
+                    }
+
+                    return (
+                      <div key={rank} className={`print-winner-col rank-${rank}`}>
+                        <div className="print-medal">{badge.icon}</div>
+                        <div className="print-winner-name">{peserta.nama}</div>
+                        <div className="print-winner-school">{peserta.sekolah}</div>
+                        <div className="print-winner-score">{peserta.totalNilai.toFixed(2)}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+            </div>
+
+            {/* Print Footer */}
+            <div className="print-footer-note">
+              <div className="print-footer-text">
+                Hasil resmi LKS Dikmen Kabupaten Kutai Timur - Diumumkan: {new Date().toLocaleDateString('id-ID', { 
+                  day: 'numeric', 
+                  month: 'long', 
+                  year: 'numeric' 
+                })}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      <div className="screen-only mt-12 grid md:grid-cols-3 gap-4">
         <Link 
           to="/klasemen" 
           className="flex items-center justify-center gap-2 px-6 py-4 bg-white border-2 border-gray-200 rounded-2xl font-semibold text-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all hover:shadow-lg"
@@ -346,10 +392,10 @@ export default function PengumumanPemenang() {
         </button>
       </div>
 
-      {/* Catatan Footer */}
-      <div className="print-footer mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
+      {/* Catatan Footer - Screen Only */}
+      <div className="screen-only mt-8 p-6 bg-blue-50 rounded-2xl border border-blue-100">
         <div className="flex gap-3">
-          <div className="flex-shrink-0 print:hidden">
+          <div className="flex-shrink-0">
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
               <Trophy className="w-5 h-5 text-blue-600" />
             </div>
@@ -387,151 +433,277 @@ export default function PengumumanPemenang() {
           animation: fade-in 0.5s ease-out forwards;
         }
         
-        /* Print Styles - Optimized for PDF */
+        /* Screen Only Elements */
+        .screen-only {
+          display: block;
+        }
+        
+        /* Print Only Elements - Hidden on Screen */
+        .print-header,
+        .print-container,
+        .print-footer-note {
+          display: none;
+        }
+        
+        /* ============================================ */
+        /* PRINT STYLES - CENTERED & 1 PAGE */
+        /* ============================================ */
         @media print {
           @page {
-            size: A4;
-            margin: 1.5cm;
+            size: A4 landscape;
+            margin: 0;
+          }
+          
+          * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            print-color-adjust: exact;
+            -webkit-print-color-adjust: exact;
+          }
+          
+          html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden !important;
+            margin: 0;
+            padding: 0;
           }
           
           body {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
-            background: white !important;
+            font-family: Arial, sans-serif;
+            font-size: 6.5pt;
+            line-height: 1.1;
+            background: white;
           }
           
-          /* Hide elements */
-          .print\\:hidden,
+          /* Hide screen elements */
+          .screen-only,
           header,
           nav,
           footer,
-          button {
+          .animate-fade-in > div:first-child {
             display: none !important;
           }
           
-          /* Hero section - compact for print */
-          .hero-print {
-            background: linear-gradient(to right, #3b82f6, #8b5cf6) !important;
-            color: white !important;
-            padding: 1.5rem !important;
-            border-radius: 1rem !important;
-            margin-bottom: 1.5rem !important;
-            page-break-after: avoid;
+          /* Show print elements */
+          .print-header,
+          .print-container,
+          .print-table,
+          .print-footer-note {
+            display: block !important;
           }
           
-          /* Stats in hero */
-          .hero-print h1 {
-            font-size: 1.75rem !important;
-            margin-bottom: 0.5rem !important;
+          /* Main container - perfectly centered */
+          .print-container {
+            display: block !important;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 27.5cm;
+            margin: 0;
           }
           
-          .hero-print p {
-            font-size: 0.9rem !important;
+          /* ===== HEADER ===== */
+          .print-header {
+            margin-bottom: 0.4cm;
+            border-bottom: 2.5px solid #3b82f6;
+            padding-bottom: 0.25cm;
+            text-align: center;
           }
           
-          /* Winner cards - better spacing */
-          .animate-fade-in {
+          .print-title-bar {
+            display: block;
+          }
+          
+          .print-main-title {
+            font-size: 13pt;
+            font-weight: 800;
+            color: #1e40af;
+            margin: 0 0 0.1cm 0;
+            line-height: 1;
+            letter-spacing: 0.1em;
+          }
+          
+          .print-subtitle {
+            font-size: 7.5pt;
+            color: #64748b;
+            margin: 0 0 0.15cm 0;
+          }
+          
+          .print-stats {
+            display: inline-block;
+            font-size: 7pt;
+            color: #475569;
+          }
+          
+          .print-stat-item {
+            font-weight: 600;
+          }
+          
+          .print-stat-divider {
+            color: #cbd5e1;
+            margin: 0 0.2cm;
+          }
+          
+          /* ===== TABLE ===== */
+          .print-table {
+            width: 100%;
+          }
+          
+          .print-row {
+            display: grid;
+            grid-template-columns: 2.6cm repeat(3, 1fr);
+            gap: 0.2cm;
+            margin-bottom: 0.25cm;
             page-break-inside: avoid;
-            margin-bottom: 1rem !important;
+            break-inside: avoid;
+            height: 2.4cm;
           }
           
-          /* Card container */
-          .print-card {
-            border: 1px solid #e5e7eb !important;
-            padding: 1rem !important;
-            border-radius: 0.75rem !important;
-            page-break-inside: avoid;
+          /* Bidang Column */
+          .print-bidang-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.1cm;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            padding: 0.2cm 0.15cm;
+            border-radius: 0.15cm;
+            border: 1px solid #cbd5e1;
           }
           
-          /* Left side - bidang info */
-          .print-bidang-info {
-            background: #f9fafb !important;
-            padding: 1rem !important;
-            border-radius: 0.5rem !important;
-            margin-bottom: 1rem !important;
+          .print-icon {
+            font-size: 15pt;
+            line-height: 1;
           }
           
-          /* Winner cards grid */
-          .print-winners-grid {
-            display: grid !important;
-            grid-template-columns: repeat(3, 1fr) !important;
-            gap: 0.75rem !important;
+          .print-bidang-text {
+            width: 100%;
           }
           
-          .print-winner-card {
-            border: 2px solid !important;
-            padding: 1rem !important;
-            border-radius: 0.75rem !important;
-            text-align: center !important;
+          .print-kode {
+            font-size: 5.5pt;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 0.05cm;
           }
           
-          /* Winner card backgrounds */
-          .print-winner-card.rank-1 {
-            background: #fef3c7 !important;
-            border-color: #fbbf24 !important;
+          .print-nama-bidang {
+            font-size: 6pt;
+            font-weight: 700;
+            color: #1e293b;
+            line-height: 1.15;
           }
           
-          .print-winner-card.rank-2 {
-            background: #dbeafe !important;
-            border-color: #60a5fa !important;
+          /* Winner Columns */
+          .print-winner-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            text-align: center;
+            padding: 0.18cm 0.15cm;
+            border-radius: 0.15cm;
+            border: 1.5px solid;
           }
           
-          .print-winner-card.rank-3 {
-            background: #fed7aa !important;
-            border-color: #fb923c !important;
+          .print-winner-col.rank-1 {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border-color: #f59e0b;
           }
           
-          /* Typography for print */
-          .print-winner-card h3 {
-            font-size: 0.9rem !important;
-            font-weight: 700 !important;
-            margin: 0.5rem 0 !important;
-            line-height: 1.2 !important;
+          .print-winner-col.rank-2 {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border-color: #3b82f6;
           }
           
-          .print-winner-card .school {
-            font-size: 0.75rem !important;
-            color: #6b7280 !important;
-            margin-bottom: 0.5rem !important;
+          .print-winner-col.rank-3 {
+            background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+            border-color: #ea580c;
           }
           
-          .print-winner-card .score {
-            font-size: 1.75rem !important;
-            font-weight: 800 !important;
-            color: #1f2937 !important;
+          .print-winner-col.print-empty {
+            background: #f8fafc;
+            border-color: #e2e8f0;
+            color: #cbd5e1;
+            border-style: dashed;
+            font-size: 9pt;
           }
           
-          /* Catatan footer */
-          .print-footer {
-            margin-top: 2rem !important;
-            padding: 1rem !important;
-            background: #eff6ff !important;
-            border: 1px solid #bfdbfe !important;
-            border-radius: 0.75rem !important;
-            page-break-inside: avoid;
+          .print-medal {
+            font-size: 12pt;
+            line-height: 1;
+            margin-bottom: 0.1cm;
           }
           
-          .print-footer p {
-            font-size: 0.75rem !important;
-            line-height: 1.4 !important;
-            margin: 0.25rem 0 !important;
+          .print-winner-name {
+            font-size: 6.5pt;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.08cm;
+            line-height: 1.1;
+            max-height: 0.7cm;
+            overflow: hidden;
           }
           
-          /* Remove shadows for print */
-          * {
-            box-shadow: none !important;
-            text-shadow: none !important;
+          .print-winner-school {
+            font-size: 5.5pt;
+            color: #475569;
+            margin-bottom: 0.1cm;
+            line-height: 1.1;
+            max-height: 0.6cm;
+            overflow: hidden;
           }
           
-          /* Preserve colors */
-          .bg-gradient-to-r,
-          .bg-gradient-to-br,
-          .bg-blue-500,
-          .bg-yellow-100,
-          .bg-blue-100,
-          .bg-orange-100 {
-            print-color-adjust: exact;
-            -webkit-print-color-adjust: exact;
+          .print-winner-score {
+            font-size: 10pt;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1;
+            margin-top: auto;
+            padding-top: 0.1cm;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            width: 100%;
+          }
+          
+          /* ===== FOOTER ===== */
+          .print-footer-note {
+            margin-top: 0.3cm;
+            padding-top: 0.2cm;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+          }
+          
+          .print-footer-text {
+            font-size: 5.5pt;
+            color: #64748b;
+            font-style: italic;
+          }
+          
+          /* Shadows for depth */
+          .print-bidang-col,
+          .print-winner-col {
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+          }
+          
+          /* Force single page */
+          .print-container,
+          .print-table,
+          .print-row {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
+          
+          .print-row:last-child {
+            margin-bottom: 0;
           }
         }
       `}</style>
